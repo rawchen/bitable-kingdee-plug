@@ -230,9 +230,9 @@ public class KingdeeServiceImpl implements KingdeeService {
     public RecordResp records(CommonReq req) {
 
         Long lineLimitNumber = 0L;
-        BitCommonParam params = JSONUtil.toBean(req.getParams(), BitCommonParam.class);
+        BitCommonParam params = JSONUtil.toBean(SignUtil.decrypt(req.getParams()), BitCommonParam.class);
         KingdeeParam kingdeeParam = JSONUtil.toBean(params.getDatasourceConfig(), KingdeeParam.class);
-        BitCommonContext context = JSONUtil.toBean(req.getContext(), BitCommonContext.class);
+        BitCommonContext context = JSONUtil.toBean(SignUtil.decrypt(req.getContext()), BitCommonContext.class);
         String tenantKey = context.getTenantKey();
         log.info("records tenantKey: {}", tenantKey);
         log.info("userTenantKey: {}", context.getUserTenantKey());
@@ -329,7 +329,7 @@ public class KingdeeServiceImpl implements KingdeeService {
     @Override
     public List<StockEntity> stockList(CommonReq req) {
         try {
-            BitCommonParam params = JSONUtil.toBean(req.getParams(), BitCommonParam.class);
+            BitCommonParam params = JSONUtil.toBean(SignUtil.decrypt(req.getParams()), BitCommonParam.class);
             KingdeeParam kingdeeParam = JSONUtil.toBean(params.getDatasourceConfig(), KingdeeParam.class);
             String context = req.getContext();
             List<HttpCookie> httpCookies = SignUtil.loginCookies(kingdeeParam);
@@ -382,7 +382,7 @@ public class KingdeeServiceImpl implements KingdeeService {
     @Override
     public R<RecordResp> kingdeeLogin(CommonReq req) {
         try {
-            BitCommonParam params = JSONUtil.toBean(req.getParams(), BitCommonParam.class);
+            BitCommonParam params = JSONUtil.toBean(SignUtil.decrypt(req.getParams()), BitCommonParam.class);
             KingdeeParam kingdeeParam = JSONUtil.toBean(params.getDatasourceConfig(), KingdeeParam.class);
             String context = req.getContext();
             String login = SignUtil.login(kingdeeParam);
@@ -413,7 +413,7 @@ public class KingdeeServiceImpl implements KingdeeService {
     @Override
     public List<OrgEntity> orgList(CommonReq req) {
         try {
-            BitCommonParam params = JSONUtil.toBean(req.getParams(), BitCommonParam.class);
+            BitCommonParam params = JSONUtil.toBean(SignUtil.decrypt(req.getParams()), BitCommonParam.class);
             KingdeeParam kingdeeParam = JSONUtil.toBean(params.getDatasourceConfig(), KingdeeParam.class);
             String context = req.getContext();
             List<HttpCookie> httpCookies = SignUtil.loginCookies(kingdeeParam);

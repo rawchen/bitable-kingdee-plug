@@ -117,7 +117,7 @@ public class MainController {
     @RequestMapping(value = "/queryPackage")
     public R<TenantAuthVo> select(@RequestBody CommonReq req, HttpServletRequest request) {
         TenantAuthVo vo;
-        BitCommonContext context = JSONUtil.toBean(req.getContext(), BitCommonContext.class);
+        BitCommonContext context = JSONUtil.toBean(SignUtil.decrypt(req.getContext()), BitCommonContext.class);
         String tenantKey = context.getBitable().getTenantKey();
         log.info("queryPackage tenantKey: {}", tenantKey);
         TenantAuth tenantAuth = tenantAuthMapper.selectOne(new LambdaQueryWrapper<TenantAuth>().eq(TenantAuth::getTenantKey, tenantKey).last("limit 1"));

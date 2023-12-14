@@ -1,5 +1,11 @@
 package com.lundong.plug.util;
 
+import cn.hutool.core.util.CharsetUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.Mode;
+import cn.hutool.crypto.Padding;
+import cn.hutool.crypto.digest.DigestUtil;
+import cn.hutool.crypto.symmetric.DES;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import com.lundong.plug.config.Constants;
@@ -98,4 +104,17 @@ public class SignUtil {
         return hexString.toString();
     }
 
+    public static String decrypt(String params) {
+        try {
+            if (StrUtil.isEmpty(params)) {
+                return "";
+            }
+            String key = DigestUtil.md5Hex(Constants.SECRET_KEY);
+            DES des = new DES(Mode.ECB, Padding.PKCS5Padding, key.getBytes());
+            return des.decryptStr(params, CharsetUtil.CHARSET_UTF_8);
+        } catch (Exception e) {
+            log.error("解密异常", e);
+            return "";
+        }
+    }
 }
