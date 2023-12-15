@@ -130,17 +130,22 @@ public class AppTest {
 
     @Test
     void test08() {
-//        System.out.println("123"));
-//        System.out.println(Base64.decodeStr("e1wiZGF0YXNvdXJjZUNvbmZpZ1wiOntcIm9yZ0lkXCI6XCIxMDAwMzhcIixcInN0b2NrSWRzXCI6XCJcIixcImtpbmdkZWVVcmxcIjpcImh0dHA6Ly8xOTIuMTY4LjExMC4yMjNcIiwgXCJhY2N0SWRcIjpcIjY0MjQyNzI3MGU5Zjg3XCIsXCJ1c2VybmFtZVwiOlwiZGVtb1wiLFwicGFzc3dvcmRcIjpcIjg4ODg4OFwifSwgXCJ0cmFuc2FjdGlvbklEXCI6XCIxMjMxM1wiLFwicGFnZVRva2VuXCI6XCJcIixcIm1heFBhZ2VTaXplXCI6XCJcIn0="));
-
-        // 前端传进来base64(json)
-        String text = "{\"datasourceConfig\":{\"orgId\":\"100038\",\"stockIds\":\"\",\"kingdeeUrl\":\"http://192.168.110.223\", \"acctId\":\"642427270e9f87\",\"username\":\"demo\",\"password\":\"888888\"}, \"transactionID\":\"12313\",\"pageToken\":\"\",\"maxPageSize\":\"\"}";
-        String key = DigestUtil.md5Hex(Constants.SECRET_KEY);
-        System.out.println(key);
-        DES des = new DES(Mode.ECB, Padding.PKCS5Padding, key.getBytes());
+//        String text = "{\"datasourceConfig\":\"{\\\"kingdeeUrl\\\":\\\"http://raw.natapp1.cc\\\",\\\"acctId\\\":\\\"642427270e9f87\\\",\\\"username\\\":\\\"demo\\\",\\\"password\\\":\\\"888888\\\",\\\"orgId\\\":\\\"\\\",\\\"number\\\":\\\"\\\",\\\"transactionID\\\":\\\"\\\",\\\"pageToken\\\":\\\"\\\",\\\"maxPageSize\\\":\\\"\\\"}\"}";
+//        DES des = new DES(Mode.ECB, Padding.PKCS5Padding, Constants.SECRET_KEY.getBytes());
+//        String result = des.encryptHex(text, StandardCharsets.UTF_8);
+//        System.out.println("加密后的输出：" + result);
+//        System.out.println(SignUtil.decrypt(result));
+        String text = "{\"datasourceConfig\":\"{\\\"kingdeeUrl\\\":\\\"http://k3cloud.natapp1.cc\\\",\\\"acctId\\\":\\\"642427270e9f87\\\",\\\"username\\\":\\\"demo\\\",\\\"password\\\":\\\"888888\\\",\\\"orgId\\\":\\\"\\\",\\\"number\\\":\\\"\\\",\\\"transactionID\\\":\\\"\\\",\\\"pageToken\\\":\\\"\\\",\\\"maxPageSize\\\":\\\"\\\"}\"}";
+        DES des = new DES(Mode.ECB, Padding.PKCS5Padding, Constants.SECRET_KEY.getBytes());
         String result = des.encryptHex(text, StandardCharsets.UTF_8);
         System.out.println("加密后的输出：" + result);
-
         System.out.println(SignUtil.decrypt(result));
+    }
+
+    @Test
+    void test09() throws Exception {
+        String a = "27345AC4D82E0F2C72C18CEC9A8E196DAAF50FEFA6B9FB8D0E38DF9079A41864CE7F7E76A01D74F59A4AD9113B77E960B436618E075ABC8CD34256B25F427AA97E8CC274381BF89B74022B4D21E1762E5FE24F7C18B06FA8405078F30AE353857A71E49786E2F33AF78E68B0A9A4C39F6B8C9EF6B1EFC3E45DCCF4094A81EFF154AC657273C1E43AA0A4A2F4403E75AF2D783AABBECAD3F367BE353549AFA7582A67701BDCB4BFA567BE353549AFA758B46D857B94EC17CDB0C740A2619645CD484CB9B4171FDD1BFECA4347F29174DFE2FF8DDDBB92551B358DD5804EB9A7CCDE8AD2CC35CEA3B878A42694020D011F";
+        String decrypt = SignUtil.decrypt(a);
+        System.out.println(decrypt);
     }
 }

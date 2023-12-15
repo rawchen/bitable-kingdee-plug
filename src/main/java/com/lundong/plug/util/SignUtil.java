@@ -2,9 +2,6 @@ package com.lundong.plug.util;
 
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.crypto.Mode;
-import cn.hutool.crypto.Padding;
-import cn.hutool.crypto.digest.DigestUtil;
 import cn.hutool.crypto.symmetric.DES;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
@@ -13,6 +10,7 @@ import com.lundong.plug.entity.param.KingdeeParam;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.HttpCookie;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -43,13 +41,12 @@ public class SignUtil {
 //        log.info("登录金蝶接口: {}", loginResponse.body());
 //        return loginResponse.getCookies();
 //    }
-
     public static List<HttpCookie> loginCookies(KingdeeParam param) {
         String loginUrl = StringUtil.convertUrl(param.getKingdeeUrl()) + Constants.KINGDEE_LOGIN;
         String loginJson = "{\n" +
-                "    \"acctID\": \"" + param.getAcctId() + "\",\n" +
+                "    \"acctID\": \"" + SignUtil.decrypt(param.getAcctId()) + "\",\n" +
                 "    \"username\": \"" + param.getUsername() + "\",\n" +
-                "    \"password\": \"" + param.getPassword() + "\",\n" +
+                "    \"password\": \"" + SignUtil.decrypt(param.getPassword()) + "\",\n" +
                 "    \"lcid\": \"2052\"\n" +
                 "}";
         HttpResponse loginResponse = HttpRequest.post(loginUrl)
@@ -62,9 +59,9 @@ public class SignUtil {
     public static String login(KingdeeParam param) {
         String loginUrl = StringUtil.convertUrl(param.getKingdeeUrl()) + Constants.KINGDEE_LOGIN;
         String loginJson = "{\n" +
-                "    \"acctID\": \"" + param.getAcctId() + "\",\n" +
+                "    \"acctID\": \"" + SignUtil.decrypt(param.getAcctId()) + "\",\n" +
                 "    \"username\": \"" + param.getUsername() + "\",\n" +
-                "    \"password\": \"" + param.getPassword() + "\",\n" +
+                "    \"password\": \"" + SignUtil.decrypt(param.getPassword()) + "\",\n" +
                 "    \"lcid\": \"2052\"\n" +
                 "}";
         HttpResponse loginResponse = HttpRequest.post(loginUrl)
@@ -109,8 +106,8 @@ public class SignUtil {
             if (StrUtil.isEmpty(params)) {
                 return "";
             }
-            String key = DigestUtil.md5Hex(Constants.SECRET_KEY);
-            DES des = new DES(Mode.ECB, Padding.PKCS5Padding, key.getBytes());
+            DES des = new DES(Constants.SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+            log.info("解密结果: {}", des.decryptStr(params, CharsetUtil.CHARSET_UTF_8));
             return des.decryptStr(params, CharsetUtil.CHARSET_UTF_8);
         } catch (Exception e) {
             log.error("解密异常", e);
