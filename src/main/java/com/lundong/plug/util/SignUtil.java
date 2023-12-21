@@ -2,14 +2,21 @@ package com.lundong.plug.util;
 
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.SecureUtil;
+import cn.hutool.crypto.asymmetric.KeyType;
+import cn.hutool.crypto.asymmetric.RSA;
 import cn.hutool.crypto.symmetric.DES;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import com.lundong.plug.config.Constants;
 import com.lundong.plug.entity.param.KingdeeParam;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.StreamUtils;
 
+import java.io.IOException;
 import java.net.HttpCookie;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -44,9 +51,9 @@ public class SignUtil {
     public static List<HttpCookie> loginCookies(KingdeeParam param) {
         String loginUrl = StringUtil.convertUrl(param.getKingdeeUrl()) + Constants.KINGDEE_LOGIN;
         String loginJson = "{\n" +
-                "    \"acctID\": \"" + SignUtil.decrypt(param.getAcctId()) + "\",\n" +
+                "    \"acctID\": \"" + SignUtil.rsaDecrypt(param.getAcctId()) + "\",\n" +
                 "    \"username\": \"" + param.getUsername() + "\",\n" +
-                "    \"password\": \"" + SignUtil.decrypt(param.getPassword()) + "\",\n" +
+                "    \"password\": \"" + SignUtil.rsaDecrypt(param.getPassword()) + "\",\n" +
                 "    \"lcid\": \"2052\"\n" +
                 "}";
         HttpResponse loginResponse = HttpRequest.post(loginUrl)
@@ -59,9 +66,9 @@ public class SignUtil {
     public static String login(KingdeeParam param) {
         String loginUrl = StringUtil.convertUrl(param.getKingdeeUrl()) + Constants.KINGDEE_LOGIN;
         String loginJson = "{\n" +
-                "    \"acctID\": \"" + SignUtil.decrypt(param.getAcctId()) + "\",\n" +
+                "    \"acctID\": \"" + SignUtil.rsaDecrypt(param.getAcctId()) + "\",\n" +
                 "    \"username\": \"" + param.getUsername() + "\",\n" +
-                "    \"password\": \"" + SignUtil.decrypt(param.getPassword()) + "\",\n" +
+                "    \"password\": \"" + SignUtil.rsaDecrypt(param.getPassword()) + "\",\n" +
                 "    \"lcid\": \"2052\"\n" +
                 "}";
         HttpResponse loginResponse = HttpRequest.post(loginUrl)
@@ -111,6 +118,21 @@ public class SignUtil {
             return des.decryptStr(params, CharsetUtil.CHARSET_UTF_8);
         } catch (Exception e) {
             log.error("解密异常", e);
+            return "";
+        }
+    }
+
+    public static String rsaDecrypt(String text) {
+        try {
+            String publicKey = StreamUtils.copyToString(new ClassPathResource("public.txt").getInputStream(), Charset.defaultCharset());
+            String privateKey = StreamUtils.copyToString(new ClassPathResource("private.txt").getInputStream(), Charset.defaultCharset());
+
+            RSA rsa = SecureUtil.rsa(privateKey, publicKey);
+            String result = rsa.decryptStr(text, KeyType.PrivateKey);
+            log.info("解密结果：{}", result);
+            return result;
+        } catch (IOException e) {
+            log.error("解密异常：", e);
             return "";
         }
     }

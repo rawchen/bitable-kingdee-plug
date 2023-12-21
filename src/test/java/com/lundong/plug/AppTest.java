@@ -4,6 +4,7 @@ import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.crypto.Mode;
 import cn.hutool.crypto.Padding;
 import cn.hutool.crypto.SecureUtil;
+import cn.hutool.crypto.asymmetric.RSA;
 import cn.hutool.crypto.digest.DigestUtil;
 import cn.hutool.crypto.symmetric.AES;
 import cn.hutool.crypto.symmetric.DES;
@@ -17,9 +18,12 @@ import com.lundong.plug.util.SignUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.StreamUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.HttpCookie;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -147,5 +151,19 @@ public class AppTest {
         String a = "27345AC4D82E0F2C72C18CEC9A8E196DAAF50FEFA6B9FB8D0E38DF9079A41864CE7F7E76A01D74F59A4AD9113B77E960B436618E075ABC8CD34256B25F427AA97E8CC274381BF89B74022B4D21E1762E5FE24F7C18B06FA8405078F30AE353857A71E49786E2F33AF78E68B0A9A4C39F6B8C9EF6B1EFC3E45DCCF4094A81EFF154AC657273C1E43AA0A4A2F4403E75AF2D783AABBECAD3F367BE353549AFA7582A67701BDCB4BFA567BE353549AFA758B46D857B94EC17CDB0C740A2619645CD484CB9B4171FDD1BFECA4347F29174DFE2FF8DDDBB92551B358DD5804EB9A7CCDE8AD2CC35CEA3B878A42694020D011F";
         String decrypt = SignUtil.decrypt(a);
         System.out.println(decrypt);
+    }
+
+    @Test
+    void test10() throws Exception {
+//        String publicKey = "";
+//        String privateKey = "";
+        String publicKey = StreamUtils.copyToString(new ClassPathResource("public.txt").getInputStream(), Charset.defaultCharset());
+        String privateKey = StreamUtils.copyToString(new ClassPathResource("private.txt").getInputStream(), Charset.defaultCharset());
+
+        RSA rsa = SecureUtil.rsa(privateKey, publicKey);
+//        String result = rsa.encryptHex("123456", KeyType.PublicKey);
+        String result = "vqz/+/VOsHl7Gu0vJI/9wgAZgJeH1JI3ND9NcziRXwa/RZ2v8ypI37Bi7UIvQEwZFid+aTu0s5ntLlPudnPFPcb7oVp+iCMGWh6b15jOHR7d0wQZidOihn/IXOy2Ou4RzHoLY7eYt7QSYoJ1x3TcZ5AhWCGFMb5qjD0P8vIZOy8=";
+        System.out.println("加密结果：" + result);
+        System.out.println("解密结果：" + SignUtil.rsaDecrypt(result));
     }
 }
