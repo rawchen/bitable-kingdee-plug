@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.net.HttpCookie;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author shuangquan.chen
@@ -164,6 +165,11 @@ public class KingdeeServiceImpl implements KingdeeService {
                     javaObject.setKeeperTypeId("供应商");
                 }
                 kingdeeStockList.add(javaObject);
+            }
+
+            // 分页失效
+            if (kingdeeStockList.size() >= lineLimitNumber) {
+                kingdeeStockList = kingdeeStockList.stream().limit(lineLimitNumber).collect(Collectors.toList());
             }
             return kingdeeStockList;
         } catch (Exception e) {
