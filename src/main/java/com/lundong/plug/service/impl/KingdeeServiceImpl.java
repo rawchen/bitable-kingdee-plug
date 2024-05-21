@@ -1,5 +1,6 @@
 package com.lundong.plug.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson.JSONArray;
@@ -117,35 +118,53 @@ public class KingdeeServiceImpl implements KingdeeService {
         try {
             List<HttpCookie> httpCookies = SignUtil.loginCookies(kingdeeParam);
             // 调用即时库存列表接口
-            String apiStockJson = "{\n" +
-                    "    \"format\":1,\n" +
-                    "    \"useragent\":\"ApiClient\",\n" +
-                    "    \"rid\":\"唯一码\",\n" +
-                    "    \"parameters\":[{\n" +
-                    "        \"fstockorgnumbers\":\"\",\n" +
-                    "        \"fmaterialnumbers\":\"\",\n" +
-                    "        \"fstocknumbers\":\"" + kingdeeParam.getNumber() + "\",\n" +
-                    "        \"flotnumbers\":\"\",\n" +
-                    "        \"isshowstockloc\":true,\n" +
-                    "        \"isshowauxprop\":true,\n" +
-                    "        \"pageindex\":1,\n" +
-                    "        \"pagerows\":" + lineLimitNumber + "\n" +
-                    "    }],\n" +
-                    "    \"timestamp\":\"\",\n" +
-                    "    \"v\":\"1.0\"\n" +
-                    "}";
-            String apiStockResult = HttpRequest.post(StringUtil.convertUrl(kingdeeParam.getKingdeeUrl()) + Constants.KINGDEE_INVENTORY)
-                    .body(apiStockJson)
-                    .cookie(httpCookies)
-                    .execute().body();
-            log.info("numbers: {}", kingdeeParam.getNumber());
-            log.info("金蝶即时库存列表查询接口: {}", apiStockResult.length() > 100 ? apiStockResult.substring(0, 100) + "..." : apiStockResult);
-            JSONObject jsonObject = JSONObject.parseObject(apiStockResult);
-            if (jsonObject == null) {
-                return Collections.emptyList();
+            boolean haseMore = true;
+            JSONArray resultArrayNew = new JSONArray();
+            int pageNumber = 1;
+            while (haseMore) {
+                JSONArray resultArray = new JSONArray();
+                String apiStockJson = "{\n" +
+                        "    \"format\":1,\n" +
+                        "    \"useragent\":\"ApiClient\",\n" +
+                        "    \"rid\":\"唯一码\",\n" +
+                        "    \"parameters\":[{\n" +
+                        "        \"fstockorgnumbers\":\"\",\n" +
+                        "        \"fmaterialnumbers\":\"\",\n" +
+                        "        \"fstocknumbers\":\"" + kingdeeParam.getNumber() + "\",\n" +
+                        "        \"flotnumbers\":\"\",\n" +
+                        "        \"isshowstockloc\":true,\n" +
+                        "        \"isshowauxprop\":true,\n" +
+                        "        \"pageindex\":" + pageNumber + ",\n" +
+                        "        \"pagerows\":" + 10000 + "\n" +
+                        "    }],\n" +
+                        "    \"timestamp\":\"\",\n" +
+                        "    \"v\":\"1.0\"\n" +
+                        "}";
+                String apiStockResult = HttpRequest.post(StringUtil.convertUrl(kingdeeParam.getKingdeeUrl()) + Constants.KINGDEE_INVENTORY)
+                        .body(apiStockJson)
+                        .cookie(httpCookies)
+                        .execute().body();
+                log.info("numbers: {}", kingdeeParam.getNumber());
+                log.info("金蝶即时库存列表查询接口: {}", apiStockResult.length() > 100 ? apiStockResult.substring(0, 100) + "..." : apiStockResult);
+                JSONObject jsonObject = JSONObject.parseObject(apiStockResult);
+                if (jsonObject.getBoolean("success")) {
+                    if (jsonObject.getJSONArray("data") != null) {
+                        resultArray = jsonObject.getJSONArray("data");
+                    } else {
+                        haseMore = false;
+                        resultArray = new JSONArray();
+                    }
+                } else {
+                    log.error("金蝶即时库存列表查询接口: {}", apiStockResult);
+                    return Collections.emptyList();
+                }
+                if (resultArray != null && !resultArray.isEmpty()) {
+                    resultArrayNew.addAll(resultArray);
+                }
+                pageNumber++;
             }
-            JSONArray resultArrayNew = jsonObject.getJSONArray("data");
-            if (resultArrayNew == null || resultArrayNew.isEmpty()) {
+
+            if (resultArrayNew.isEmpty()) {
                 return Collections.emptyList();
             }
             for (int i = 0; i < resultArrayNew.size(); i++) {
@@ -275,7 +294,6 @@ public class KingdeeServiceImpl implements KingdeeService {
                     deptRecords.add(emptRecord);
                 }
                 recordResp.setRecords(deptRecords);
-                recordResp.setHasMore(false);
                 break;
             case EMPLOYEE:
                 // 封装字段和文本
@@ -296,7 +314,6 @@ public class KingdeeServiceImpl implements KingdeeService {
                     employeeRecords.add(employeeRecord);
                 }
                 recordResp.setRecords(employeeRecords);
-                recordResp.setHasMore(false);
                 break;
             case STOCK:
                 // 封装字段和文本
@@ -323,14 +340,13 @@ public class KingdeeServiceImpl implements KingdeeService {
                     map.put("id16", kingdeeStocks.get(i).getOwnerNumber());
                     map.put("id17", kingdeeStocks.get(i).getOwnerName());
                     employeeRecord.setData(map);
-                    employeeRecord.setPrimaryID("fid_" + (i + 1));
+                    employeeRecord.setPrimaryID("fid_" + kingdeeStocks.get(i).getId());
                     stockRecords.add(employeeRecord);
                 }
                 recordResp.setRecords(stockRecords);
-                recordResp.setHasMore(false);
                 break;
         }
-        return recordResp;
+        return page(recordResp.getRecords(), kingdeeParam.getPageToken(), kingdeeParam.getMaxPageSize());
     }
 
     @Override
@@ -464,6 +480,39 @@ public class KingdeeServiceImpl implements KingdeeService {
             log.error("接口调用失败: ", e);
         }
         return Collections.emptyList();
+    }
+
+    public RecordResp page(List<Record> records, String pageToken, String maxPageSizeStr) {
+        int maxPageSize;
+        int currentPage;
+        if (StrUtil.isEmpty(maxPageSizeStr)) {
+            maxPageSize = 1000;
+        } else {
+            maxPageSize = Integer.valueOf(maxPageSizeStr);
+        }
+        int maxPage = records.size() / maxPageSize;
+        RecordResp recordResp = new RecordResp();
+        if (StrUtil.isEmpty(pageToken)) {
+            currentPage = 1;
+        } else {
+            currentPage = Integer.valueOf(pageToken);
+        }
+        if (records.size() / maxPageSize > 0 && currentPage <= maxPage) {
+            // 至少有下一页
+            recordResp.setNextPageToken(String.valueOf(currentPage + 1));
+        }
+        recordResp.setHasMore(currentPage <= maxPage);
+        recordResp.setRecords(getPageData(records, maxPageSize, currentPage));
+        return recordResp;
+    }
+
+    public static List<Record> getPageData(List<Record> data, int pageSize, int currentPage) {
+        int startIndex = (currentPage - 1) * pageSize;
+        int endIndex = Math.min(startIndex + pageSize, data.size());
+        if (startIndex >= data.size()) {
+            return new ArrayList<>();
+        }
+        return data.subList(startIndex, endIndex);
     }
 
 }

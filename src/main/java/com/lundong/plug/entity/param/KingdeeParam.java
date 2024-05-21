@@ -1,5 +1,6 @@
 package com.lundong.plug.entity.param;
 
+import cn.hutool.core.annotation.Alias;
 import lombok.Data;
 
 /**
@@ -23,5 +24,14 @@ public class KingdeeParam {
     private String username;
 
     private String password;
+
+    @Alias("TransactionID")
+    private String transactionID;
+
+    @Alias("pageToken")
+    private String pageToken;
+
+    @Alias("maxPageSize")
+    private String maxPageSize;
 
 }
